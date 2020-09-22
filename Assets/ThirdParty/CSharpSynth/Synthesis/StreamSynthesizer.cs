@@ -28,6 +28,7 @@ namespace CSharpSynth.Synthesis
         private int samplesperBuffer = 2000;
         private int polyphony = 40; //total number of voices available
         private int maxnotepoly = 2; //how many of the same note can be playing at once
+        private int bytesPerSample = 2; //assume 16 bit audio
         //Tweakable Parameters, anytime via properties
         private float MainVolume = 1.0f; //Not too high or will cause clipping
         //--Public Properties
@@ -79,10 +80,11 @@ namespace CSharpSynth.Synthesis
         //    setupSynth();
         //}
         //UnitySynth
-        public StreamSynthesizer(int sampleRate, int audioChannels, int bufferSize, int maxpoly)
+        public StreamSynthesizer(int sampleRate, int audioChannels, int bufferSize, int maxpoly, int bytesPerSample)
         {
             this.sampleRate = sampleRate;
             this.audioChannels = audioChannels;
+            this.bytesPerSample = bytesPerSample;
             //UnitySynth
             this.samplesperBuffer = bufferSize;
             this.polyphony = maxpoly;
@@ -304,14 +306,13 @@ namespace CSharpSynth.Synthesis
         }
         private void ConvertBuffer(float[,] from, byte[] to)
         {
-            const int bytesPerSample = 2; //again we assume 16 bit audio
             int channels = from.GetLength(0);
             int bufferSize = from.GetLength(1);
 
             // Make sure the buffer sizes are correct
-           //UnitySynth
-           if (!(to.Length == bufferSize * channels * bytesPerSample))
-                Debug.Log( "Buffer sizes are mismatched.");
+            //UnitySynth
+            if (!(to.Length == bufferSize * channels * bytesPerSample))
+                Debug.Log("Buffer sizes are mismatched.");
 
             for (int i = 0; i < bufferSize; i++)
             {
@@ -347,7 +348,6 @@ namespace CSharpSynth.Synthesis
         //UnitySynth
         private void ConvertBuffer(float[,] from, float[] to)
         {
-            const int bytesPerSample = 2; //again we assume 16 bit audio
             int channels = from.GetLength(0);
             int bufferSize = from.GetLength(1);
             int sampleIndex = 0;
@@ -487,9 +487,14 @@ namespace CSharpSynth.Synthesis
                 audioChannels = 1;
                 Debug.Log("-----> Invalid Audio Channels! Changed to---->" + audioChannels);
             }
+            if (bytesPerSample < 1 || bytesPerSample > 2)
+            {
+                bytesPerSample = 1;
+                Debug.Log("-----> Invalid Bytes Per Sample! Changed to---->" + bytesPerSample);
+            }
             //initialize variables
             sampleBuffer = new float[audioChannels, samplesperBuffer];
-            rawBufferLength = audioChannels * samplesperBuffer * 2; //Assuming 16 bit data
+            rawBufferLength = audioChannels * samplesperBuffer * bytesPerSample;
             // Create voice structures
             voicePool = new Voice[polyphony];
             for (int i = 0; i < polyphony; ++i)
